@@ -1,9 +1,6 @@
 # Visual Studio 2015 user specific files
 .vs/
 
-# Assets maps
-Content/Low_Poly_Viking_World/Maps
-
 # Rider solution
 .idea/
 
