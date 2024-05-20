@@ -4,6 +4,7 @@
 #include "Corelogic/Player/VPPlayerController.h"
 
 #include "Corelogic/Subsystems/VPARSubsystem.h"
+#include "Interfaces/VPInteraction.h"
 
 AVPPlayerController::AVPPlayerController()
 {
@@ -14,47 +15,68 @@ bool AVPPlayerController::InputTouch(uint32 Handle, ETouchType::Type Type, const
 {
 	const bool Result = Super::InputTouch(Handle, Type, TouchLocation, Force, DeviceTimestamp, TouchpadIndex);
 
-	int32 ScreenX = 0;
-	int32 ScreenY = 0;
-	GetViewportSize(ScreenX, ScreenY);
-
-	UVPARSubsystem* ARSubsystem = GetWorld()->GetSubsystem<UVPARSubsystem>();
-	if (ARSubsystem && ARSubsystem->GetIsScanActive())
+	if (Type == ETouchType::Began || Type == ETouchType::Ended)
 	{
-		FARTraceResult PlaneGeometry = ARSubsystem->GetNearestPlaneByLineTrace(FVector2D(ScreenX, ScreenY));
-		if (PlaneGeometry.GetTrackedGeometry())
-		{
-			OnPlaneTouched.Broadcast(PlaneGeometry);
-		}
-	}
-	else
-	{
-		if (Type == ETouchType::Began || Type == ETouchType::Ended)
-		{
-			FVector ScreenWorldLocation{};
-			FVector ScreenWorldDirection{};
+		int32 ScreenX = 0;
+		int32 ScreenY = 0;
+		GetViewportSize(ScreenX, ScreenY);
 
-			if (DeprojectScreenPositionToWorld(ScreenX, ScreenY, ScreenWorldLocation, ScreenWorldDirection))
+		FVector ScreenWorldLocation{};
+		FVector ScreenWorldDirection{};
+
+		if (DeprojectScreenPositionToWorld(ScreenX, ScreenY, ScreenWorldLocation, ScreenWorldDirection))
+		{
+			const UWorld* World = GetWorld();
+
+			if (World)
 			{
-				UWorld* World = GetWorld();
-				if (World)
+				const UVPARSubsystem* ARSubsystem = World->GetSubsystem<UVPARSubsystem>();
+
+				if (ARSubsystem->GetIsScanActive())
+				{
+					if (Type == ETouchType::Began)
+						if (UARPlaneGeometry* PlaneGeometry = ARSubsystem->GetNearestPlaneByLineTrace(
+							FVector2D(ScreenX, ScreenY)))
+							ARSubsystem->OnPlayerTouchedPlane.Broadcast(PlaneGeometry, this);
+				}
+				else
 				{
 					const FVector StartLocation = ScreenWorldLocation;
 					const FVector EndLocation = StartLocation + (ScreenWorldDirection * TouchTraceLength);
 					FHitResult HitResult{};
+					FCollisionQueryParams Params{};
+					Params.bTraceComplex = true;
 
 					if (World->LineTraceSingleByObjectType(HitResult, StartLocation, EndLocation,
-					                                       FCollisionObjectQueryParams::AllObjects))
+					                                       FCollisionObjectQueryParams::AllObjects, Params))
 					{
 						switch (Type)
 						{
 						case ETouchType::Began:
 							HitResult.Actor->OnInputTouchBegin.Broadcast(ETouchIndex::Touch1, GetPawn());
+
 							break;
 						case ETouchType::Ended:
 							HitResult.Actor->OnInputTouchEnd.Broadcast(ETouchIndex::Touch1, GetPawn());
+
+							if (HitResult.Actor->Implements<UVPInteraction>())
+								IVPInteraction::Execute_Interact(
+									HitResult.Actor.Get(), GetPawn(), HitResult);
+
 							break;
 						default: ;
+						}
+					}
+					else
+					{
+						if (World->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Camera, Params))
+						{
+							if (Type == ETouchType::Ended)
+							{
+								if (HitResult.Actor->Implements<UVPInteraction>())
+									IVPInteraction::Execute_Interact(
+										HitResult.Actor.Get(), GetPawn(), HitResult);
+							}
 						}
 					}
 				}

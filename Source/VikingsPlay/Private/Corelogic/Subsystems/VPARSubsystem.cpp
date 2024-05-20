@@ -24,12 +24,14 @@ void UVPARSubsystem::SetIsScanActive(const bool Active)
 	}
 }
 
-FARTraceResult UVPARSubsystem::GetNearestPlaneByLineTrace(const FVector2D& ScreenPoint)
+UARPlaneGeometry* UVPARSubsystem::GetNearestPlaneByLineTrace(const FVector2D& ScreenPoint)
 {
 	TArray<FARTraceResult> TrackedObjects = UARBlueprintLibrary::LineTraceTrackedObjects(
 		ScreenPoint, false, true, true, true);
 
-	return TrackedObjects.IsValidIndex(0) ? TrackedObjects[0] : FARTraceResult();
+	return Cast<UARPlaneGeometry>(TrackedObjects.IsValidIndex(0)
+		                              ? TrackedObjects[0].GetTrackedGeometry()
+		                              : nullptr);
 }
 
 TArray<UARPlaneGeometry*> UVPARSubsystem::GetFoundPlanes()

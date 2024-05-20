@@ -11,11 +11,15 @@
 class UARPlaneGeometry;
 class UARSessionConfig;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSessionChangedSignature,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSessionChanged,
                                              bool, SessionRunning,
                                              EARSessionStatus, SessionStatus);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScanActiveChangedSignature, bool, IsScanActive);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerTouchedPlane,
+                                             UARPlaneGeometry*, PlaneGeometry,
+                                             APlayerController*, PlayerController);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScanActiveChanged, bool, IsScanActive);
 
 
 /**
@@ -29,11 +33,15 @@ class VIKINGSPLAY_API UVPARSubsystem : public UTickableWorldSubsystem
 public:
 	/** Called when session status changes(from running to any or from any to running). */
 	UPROPERTY(BlueprintAssignable)
-	FOnSessionChangedSignature OnSessionChanged;
+	FOnSessionChanged OnSessionChanged;
+
+	/** Called when any player controller touched the plane. */
+	UPROPERTY(BlueprintAssignable, meta=(DeprecatedProperty))
+	FOnPlayerTouchedPlane OnPlayerTouchedPlane;
 
 	/** Called when scanning status changes(not a session). */
 	UPROPERTY(BlueprintAssignable)
-	FOnScanActiveChangedSignature OnScanActiveChanged;
+	FOnScanActiveChanged OnScanActiveChanged;
 
 	// FTickableGameObject implementation Begin
 	virtual TStatId GetStatId() const override
@@ -62,7 +70,7 @@ public:
 
 	/** Returns nearest plane(or nullptr) under target screen coordinates. */
 	UFUNCTION(BlueprintCallable, meta=(Keywords="Get Nearest Plane By Line Trace"))
-	static FARTraceResult GetNearestPlaneByLineTrace(const FVector2D& ScreenPoint);
+	static UARPlaneGeometry* GetNearestPlaneByLineTrace(const FVector2D& ScreenPoint);
 
 	/** Returns all found planes. */
 	UFUNCTION(BlueprintCallable, meta=(Keywords="Get Found Planes"))

@@ -3,11 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ARTraceResult.h"
 #include "GameFramework/PlayerController.h"
 #include "VPPlayerController.generated.h"
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlaneTouchedSignature, FARTraceResult, TraceObject);
 
 /**
  * 
@@ -19,10 +16,6 @@ class VIKINGSPLAY_API AVPPlayerController : public APlayerController
 
 public:
 	AVPPlayerController();
-
-	UPROPERTY(BlueprintAssignable)
-	FOnPlaneTouchedSignature OnPlaneTouched;
-
 
 	/** Player controller touch event. */
 	virtual bool InputTouch(uint32 Handle, ETouchType::Type Type, const FVector2D& TouchLocation, float Force,

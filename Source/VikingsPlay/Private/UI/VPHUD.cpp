@@ -2,3 +2,9 @@
 
 
 #include "UI/VPHUD.h"
+
+AVPHUD::AVPHUD()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+}

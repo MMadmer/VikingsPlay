@@ -13,4 +13,7 @@ UCLASS()
 class VIKINGSPLAY_API AVPHUD : public AHUD
 {
 	GENERATED_BODY()
+
+public:
+	AVPHUD();
 };
